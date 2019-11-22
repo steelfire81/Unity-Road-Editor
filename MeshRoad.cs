@@ -53,13 +53,13 @@ public class MeshRoad : MonoBehaviour
     /// </summary>
     public float width = 10;
 
+    // TODO: Smoothness
+
     [Header("Advanced Generation Options")]
     /// <summary>
-    /// Tolerance level used when simplifying the road's drawn line.
+    /// Number of points to average when smoothing road points.
     /// </summary>
-    public float simplifyTolerance = 0.2f;
-
-    // TODO: Thickness
+    public int averageWindow = 5;
 
 
     // DATA MEMBERS
@@ -116,6 +116,15 @@ public class MeshRoad : MonoBehaviour
             Debug.DrawLine(a, b, Color.blue, DEBUG_DRAW_DURATION, false);
         }
     }
+
+    /// <summary>
+    /// Clear points and mesh associated with this road.
+    /// </summary>
+    public void clear()
+    {
+        roadLinePoints = new Vector3[0];
+        generate();
+    }
     
     /// <summary>
     /// Regenerate this road upon changing its settings.
@@ -128,9 +137,11 @@ public class MeshRoad : MonoBehaviour
         GetComponent<MeshFilter>().mesh = mesh;
         GetComponent<MeshCollider>().sharedMesh = mesh;
 
-        // TODO: Obtain points from line drawn by the user
-        generateShape();
-        generateMesh();
+        if (roadLinePoints.Length > 0)
+        {
+            generateShape();
+            generateMesh();
+        }
     }
 
     /// <summary>

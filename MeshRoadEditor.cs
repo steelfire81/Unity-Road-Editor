@@ -48,6 +48,12 @@ public class MeshRoadEditor : Editor
             road.generate();
         }
 
+        // Add button to clear road
+        if (GUILayout.Button("Clear Road"))
+        {
+            road.clear();
+        }
+
         // Add debug buttons
         if (GUILayout.Button("Debug Road Line"))
         {
@@ -84,7 +90,7 @@ public class MeshRoadEditor : Editor
                 case EventType.MouseDrag:
                     roadLinePoints.Add(editorToWorldPoint(mousePosition));
 
-                    // DEBUG (Maybe leave in?)
+                    // Useful debug - draw the last line segment
                     Debug.DrawLine(roadLinePoints[roadLinePoints.Count - 2], roadLinePoints[roadLinePoints.Count - 1], Color.cyan, 5, false);
 
                     Event.current.Use();
@@ -131,8 +137,8 @@ public class MeshRoadEditor : Editor
     {
         MeshRoad road = (MeshRoad) target;
 
-        List<Vector3> simplifiedLine = new List<Vector3>();
-        LineUtility.Simplify(roadLinePoints, road.simplifyTolerance, simplifiedLine);
+        List<Vector3> simplifiedLine = LineSmoother.biasedMovingAverages(roadLinePoints, road.averageWindow);
+
         road.setRoadLinePoints(simplifiedLine);
         roadLinePoints.Clear(); // No need to keep this data twice
 
