@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>
@@ -11,6 +12,27 @@ using UnityEngine;
 [RequireComponent(typeof(MeshCollider))]
 public class MeshRoad : MonoBehaviour
 {
+    // STATIC FUNCTIONS
+    /// <summary>
+    /// Create a new mesh road with required components attached.
+    /// </summary>
+    /// <param name="command"></param>
+    [MenuItem("GameObject/Mesh Roads/Mesh Road", false, 10)]
+    private static void createMeshRoad(MenuCommand command)
+    {
+        GameObject meshRoad = new GameObject("Mesh Road");
+        GameObjectUtility.SetParentAndAlign(meshRoad, (GameObject) command.context);
+        Undo.RegisterCreatedObjectUndo(meshRoad, "Create " + meshRoad.name);
+        Selection.activeObject = meshRoad;
+
+        // Attach required components
+        meshRoad.AddComponent<MeshFilter>();
+        meshRoad.AddComponent<MeshRenderer>();
+        meshRoad.AddComponent<MeshCollider>();
+        meshRoad.AddComponent<MeshRoad>();
+    }
+
+
     // CONSTANTS
     /// <summary>
     /// Number of seconds that debug drawings remain in editor view.
@@ -22,14 +44,14 @@ public class MeshRoad : MonoBehaviour
     /// <summary>
     /// Name of the road in the world map.
     /// </summary>
-    public string roadName;
+    public string roadName = "Mesh Road";
 
     /// <summary>
     /// Width of the road object.
     /// 
     /// TODO: Make dependent on segment instead of whole road (?)
     /// </summary>
-    public float width;
+    public float width = 10;
 
     [Header("Advanced Generation Options")]
     /// <summary>
