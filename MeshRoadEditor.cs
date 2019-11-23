@@ -59,9 +59,9 @@ public class MeshRoadEditor : Editor
         {
             road.debugRoadLine();
         }
-        if (GUILayout.Button("Debug Perpendiculars"))
+        if (GUILayout.Button("Debug Cross Sections"))
         {
-            road.debugPerpendiculars();
+            road.debugCrossSections();
         }
     }
 

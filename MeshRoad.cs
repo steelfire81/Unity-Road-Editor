@@ -48,12 +48,13 @@ public class MeshRoad : MonoBehaviour
 
     /// <summary>
     /// Width of the road object.
-    /// 
-    /// TODO: Make dependent on segment instead of whole road (?)
     /// </summary>
     public float width = 10;
 
-    // TODO: Smoothness
+    /// <summary>
+    /// Height of the road object.
+    /// </summary>
+    public float thickness = 0.1f;
 
     [Header("Advanced Generation Options")]
     /// <summary>
@@ -105,15 +106,21 @@ public class MeshRoad : MonoBehaviour
     }
 
     /// <summary>
-    /// Draw perpendiculars joining vertex sets.
+    /// Draw outlines of road's cross sections
     /// </summary>
-    public void debugPerpendiculars()
+    public void debugCrossSections()
     {
-        for (int i = 0; i < vertices.Length; i += 2)
+        for (int i = 0; i < vertices.Length; i += 4)
         {
-            Vector3 a = transform.TransformPoint(vertices[i]);
-            Vector3 b = transform.TransformPoint(vertices[i + 1]);
-            Debug.DrawLine(a, b, Color.blue, DEBUG_DRAW_DURATION, false);
+            Vector3 topLeft = transform.TransformPoint(vertices[i]);
+            Vector3 topRight = transform.TransformPoint(vertices[i + 1]);
+            Vector3 bottomLeft = transform.TransformPoint(vertices[i + 2]);
+            Vector3 bottomRight = transform.TransformPoint(vertices[i + 3]);
+
+            Debug.DrawLine(topLeft, topRight, Color.blue, DEBUG_DRAW_DURATION, false);
+            Debug.DrawLine(bottomLeft, bottomRight, Color.blue, DEBUG_DRAW_DURATION, false);
+            Debug.DrawLine(topLeft, bottomLeft, Color.blue, DEBUG_DRAW_DURATION, false);
+            Debug.DrawLine(topRight, bottomRight, Color.blue, DEBUG_DRAW_DURATION, false);
         }
     }
 
@@ -149,50 +156,97 @@ public class MeshRoad : MonoBehaviour
     /// </summary>
     private void generateShape()
     {
-        vertices = new Vector3[roadLinePoints.Length * 2];
-        triangles = new int[(roadLinePoints.Length - 1) * 6];
+        // 4 vertices for each point along the road - each forms a cross section
+        vertices = new Vector3[roadLinePoints.Length * 4];
 
-        // For each point on the line, draw a line segment perpendicular
-        // to the line to the next point.  Then, add the endpoints of that
-        // line segment to the list of vertices.
-        Vector3 perpendicular = new Vector3();
-        for (int i = 0; i < roadLinePoints.Length - 1; i++)
+        // 8 triangles for each set of 2 cross sections, plus 4 additional for the endpoints
+        // Each triangle contains three points
+        triangles = new int[((roadLinePoints.Length - 1) * 8 + 4) * 3];
+        
+        // For each point on the line, generate a rectangle (cross section)
+        // perpendicular to the line to the next point.
+        Vector3 direction = new Vector3();
+        for (int i = 0; i < roadLinePoints.Length; i++)
         {
             Vector3 a = roadLinePoints[i];
-            Vector3 b = roadLinePoints[i + 1];
 
-            Vector3 direction = b - a;
-            perpendicular = Vector3.Cross(direction, gameObject.transform.up).normalized;
+            // Special case - last cross section should use same direction as previous
+            if (i < roadLinePoints.Length - 1)
+            {
+                Vector3 b = roadLinePoints[i + 1];
+                direction = b - a;
+            }
 
-            vertices[i * 2] = a + (perpendicular * (width / 2));
-            vertices[i * 2 + 1] = a - (perpendicular * (width / 2));
+            MeshRoadCrossSection crossSection = new MeshRoadCrossSection(a, direction, this);
+
+            // Add vertices to set now
+            vertices[i * 4] = crossSection.topLeft;
+            vertices[i * 4 + 1] = crossSection.topRight;
+            vertices[i * 4 + 2] = crossSection.bottomLeft;
+            vertices[i * 4 + 3] = crossSection.bottomRight;
         }
 
-        // Last perpendicular should face the same direction as the second to last
-        Vector3 last = roadLinePoints[roadLinePoints.Length - 1];
-        vertices[vertices.Length - 2] = last + (perpendicular * (width / 2));
-        vertices[vertices.Length - 1] = last - (perpendicular * (width / 2));
-
-        // For each set of four vertices, form two triangles
+        // Form appropriate triangles for each cross section
         for (int i = 0; i < roadLinePoints.Length - 1; i++)
         {
-            int first = i * 6;
+            int tOffset = i * 8 * 3;
+            int vOffset = i * 4;
 
-            int a = i * 2;
-            int b = i * 2 + 1;
-            int c = (i + 1) * 2;
-            int d = (i + 1) * 2 + 1;
+            // Top triangles
+            triangles[tOffset] = vOffset;
+            triangles[tOffset + 1] = vOffset + 4;
+            triangles[tOffset + 2] = vOffset + 1;
 
-            // First triangle
-            triangles[first] = a;
-            triangles[first + 1] = c;
-            triangles[first + 2] = b;
+            triangles[tOffset + 3] = vOffset + 4;
+            triangles[tOffset + 4] = vOffset + 5;
+            triangles[tOffset + 5] = vOffset + 1;
 
-            // Second triangle
-            triangles[first + 3] = b;
-            triangles[first + 4] = c;
-            triangles[first + 5] = d;
+            // Bottom triangles
+            triangles[tOffset + 6] = vOffset + 2;
+            triangles[tOffset + 7] = vOffset + 3;
+            triangles[tOffset + 8] = vOffset + 6;
+
+            triangles[tOffset + 9] = vOffset + 3;
+            triangles[tOffset + 10] = vOffset + 7;
+            triangles[tOffset + 11] = vOffset + 6;
+
+            // Left triangles
+            triangles[tOffset + 12] = vOffset;
+            triangles[tOffset + 13] = vOffset + 2;
+            triangles[tOffset + 14] = vOffset + 4;
+
+            triangles[tOffset + 15] = vOffset + 2;
+            triangles[tOffset + 16] = vOffset + 6;
+            triangles[tOffset + 17] = vOffset + 4;
+
+            // Right triangles
+            triangles[tOffset + 18] = vOffset + 1;
+            triangles[tOffset + 19] = vOffset + 5;
+            triangles[tOffset + 20] = vOffset + 3;
+
+            triangles[tOffset + 21] = vOffset + 5;
+            triangles[tOffset + 22] = vOffset + 7;
+            triangles[tOffset + 23] = vOffset + 3;
         }
+
+        // Special case: front triangles on first cross section
+        int sOffset = triangles.Length - 12;
+        triangles[sOffset] = 0;
+        triangles[sOffset + 1] = 1;
+        triangles[sOffset + 2] = 2;
+
+        triangles[sOffset + 3] = 1;
+        triangles[sOffset + 4] = 3;
+        triangles[sOffset + 5] = 2;
+
+        // Special case: back triangles on last cross section
+        triangles[sOffset + 6] = vertices.Length - 4;
+        triangles[sOffset + 7] = vertices.Length - 2;
+        triangles[sOffset + 8] = vertices.Length - 3;
+
+        triangles[sOffset + 9] = vertices.Length - 2;
+        triangles[sOffset + 10] = vertices.Length - 1;
+        triangles[sOffset + 11] = vertices.Length - 3;
     }
 
     /// <summary>
