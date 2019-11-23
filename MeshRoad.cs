@@ -152,6 +152,27 @@ public class MeshRoad : MonoBehaviour
     }
 
     /// <summary>
+    /// Create forward-facing triangles from a rectangle and insert them into the list of triangles.
+    /// 
+    /// "Front" side of the rectangle is formed by provided vertices in clockwise order.
+    /// </summary>
+    /// <param name="tOffset">Index at which to insert the first triangle.</param>
+    /// <param name="vertA">Index of top left vertex.</param>
+    /// <param name="vertB">Index of top right vertex.</param>
+    /// <param name="vertC">Index of bottom left vertex.</param>
+    /// <param name="vertD">Index of bottom right vertex.</param>
+    private void pushTriangles(int tOffset, int vertA, int vertB, int vertC, int vertD)
+    {
+        triangles[tOffset] = vertA;
+        triangles[tOffset + 1] = vertB;
+        triangles[tOffset + 2] = vertC;
+
+        triangles[tOffset + 3] = vertC;
+        triangles[tOffset + 4] = vertD;
+        triangles[tOffset + 5] = vertA;
+    }
+
+    /// <summary>
     /// Calculate the road's vertices and form triangles
     /// </summary>
     private void generateShape()
@@ -193,60 +214,24 @@ public class MeshRoad : MonoBehaviour
             int vOffset = i * 4;
 
             // Top triangles
-            triangles[tOffset] = vOffset;
-            triangles[tOffset + 1] = vOffset + 4;
-            triangles[tOffset + 2] = vOffset + 1;
-
-            triangles[tOffset + 3] = vOffset + 4;
-            triangles[tOffset + 4] = vOffset + 5;
-            triangles[tOffset + 5] = vOffset + 1;
+            pushTriangles(tOffset, vOffset, vOffset + 4, vOffset + 5, vOffset + 1);
 
             // Bottom triangles
-            triangles[tOffset + 6] = vOffset + 2;
-            triangles[tOffset + 7] = vOffset + 3;
-            triangles[tOffset + 8] = vOffset + 6;
-
-            triangles[tOffset + 9] = vOffset + 3;
-            triangles[tOffset + 10] = vOffset + 7;
-            triangles[tOffset + 11] = vOffset + 6;
+            pushTriangles(tOffset + 6, vOffset + 2, vOffset + 3, vOffset + 7, vOffset + 6);
 
             // Left triangles
-            triangles[tOffset + 12] = vOffset;
-            triangles[tOffset + 13] = vOffset + 2;
-            triangles[tOffset + 14] = vOffset + 4;
-
-            triangles[tOffset + 15] = vOffset + 2;
-            triangles[tOffset + 16] = vOffset + 6;
-            triangles[tOffset + 17] = vOffset + 4;
+            pushTriangles(tOffset + 12, vOffset, vOffset + 2, vOffset + 6, vOffset + 4);
 
             // Right triangles
-            triangles[tOffset + 18] = vOffset + 1;
-            triangles[tOffset + 19] = vOffset + 5;
-            triangles[tOffset + 20] = vOffset + 3;
-
-            triangles[tOffset + 21] = vOffset + 5;
-            triangles[tOffset + 22] = vOffset + 7;
-            triangles[tOffset + 23] = vOffset + 3;
+            pushTriangles(tOffset + 18, vOffset + 1, vOffset + 5, vOffset + 7, vOffset + 3);
         }
 
         // Special case: front triangles on first cross section
-        int sOffset = triangles.Length - 12;
-        triangles[sOffset] = 0;
-        triangles[sOffset + 1] = 1;
-        triangles[sOffset + 2] = 2;
-
-        triangles[sOffset + 3] = 1;
-        triangles[sOffset + 4] = 3;
-        triangles[sOffset + 5] = 2;
+        pushTriangles(triangles.Length - 12, 0, 1, 3, 2);
 
         // Special case: back triangles on last cross section
-        triangles[sOffset + 6] = vertices.Length - 4;
-        triangles[sOffset + 7] = vertices.Length - 2;
-        triangles[sOffset + 8] = vertices.Length - 3;
-
-        triangles[sOffset + 9] = vertices.Length - 2;
-        triangles[sOffset + 10] = vertices.Length - 1;
-        triangles[sOffset + 11] = vertices.Length - 3;
+        pushTriangles(triangles.Length - 6, vertices.Length - 4, vertices.Length - 2,
+            vertices.Length - 1, vertices.Length - 3);
     }
 
     /// <summary>
