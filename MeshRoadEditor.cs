@@ -9,6 +9,12 @@ using UnityEditor;
 [CustomEditor(typeof(MeshRoad))]
 public class MeshRoadEditor : Editor
 {
+    // CONSTANTS
+    /// <summary>
+    /// Highest valid layer index.
+    /// </summary>
+    private const int MAX_LAYER = 31;
+
     // DATA MEMBERS
     /// <summary>
     /// Whether or not drawing is currently enabled.
@@ -20,6 +26,16 @@ public class MeshRoadEditor : Editor
     /// </summary>
     private List<Vector3> roadLinePoints;
 
+    /// <summary>
+    /// Array of layer names.
+    /// </summary>
+    private string[] layerNames;
+
+    /// <summary>
+    /// The layer on which the road can be drawn.
+    /// </summary>
+    private int targetLayer;
+
 
     // FUNCTIONS
     /// <summary>
@@ -29,6 +45,8 @@ public class MeshRoadEditor : Editor
     {
         drawingEnabled = false;
         roadLinePoints = new List<Vector3>();
+        layerNames = getLayerNames();
+        targetLayer = 0;
     }
 
     /// <summary>
@@ -38,6 +56,9 @@ public class MeshRoadEditor : Editor
     {
         DrawDefaultInspector();
         MeshRoad road = (MeshRoad) target;
+
+        // Target layer dropdown
+        targetLayer = EditorGUILayout.Popup("Target Layer", targetLayer, getLayerNames());
 
         // Add features to draw road
         drawingEnabled = EditorGUILayout.Toggle("Enable Drawing", drawingEnabled);
@@ -114,13 +135,13 @@ public class MeshRoadEditor : Editor
     /// <returns>A world point.</returns>
     private Vector3 editorToWorldPoint(Vector2 mousePosition)
     {
+        int layerMask = LayerMask.GetMask(layerNames[targetLayer]);
         mousePosition.y = Camera.current.pixelHeight - mousePosition.y; // Mouse position y is inverted
         RaycastHit hit;
-        Physics.Raycast(Camera.current.ScreenPointToRay(mousePosition), out hit);
+        Physics.Raycast(Camera.current.ScreenPointToRay(mousePosition), out hit, Mathf.Infinity, layerMask);
         
         if (hit.collider)
         {
-            // TODO: Only detect collision with terrain
             return hit.point;
         }
         else // ERROR
@@ -143,5 +164,21 @@ public class MeshRoadEditor : Editor
         roadLinePoints.Clear(); // No need to keep this data twice
 
         road.debugRoadLine();
+    }
+
+    /// <summary>
+    /// Get list of layer names, both default and user-defined.
+    /// </summary>
+    /// <returns>Array containing names of all layers.</returns>
+    private string[] getLayerNames()
+    {
+        List<string> layers = new List<string>();
+        for (int i = 0; i <= MAX_LAYER; i++)
+        {
+            string layerName = LayerMask.LayerToName(i);
+            if (layerName != "")
+                layers.Add(layerName);
+        }
+        return layers.ToArray();
     }
 }
