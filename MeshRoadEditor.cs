@@ -15,6 +15,12 @@ public class MeshRoadEditor : Editor
     /// </summary>
     private const int MAX_LAYER = 31;
 
+    /// <summary>
+    /// Option for targetting all layers with drawing.
+    /// </summary>
+    private const string TARGET_LAYER_ALL = "All Layers";
+
+
     // DATA MEMBERS
     /// <summary>
     /// Whether or not drawing is currently enabled.
@@ -135,11 +141,16 @@ public class MeshRoadEditor : Editor
     /// <returns>A world point.</returns>
     private Vector3 editorToWorldPoint(Vector2 mousePosition)
     {
-        int layerMask = LayerMask.GetMask(layerNames[targetLayer]);
+        string targetLayerName = layerNames[targetLayer];
+        int layerMask = int.MaxValue;
+        if (targetLayerName != TARGET_LAYER_ALL)
+        {
+            layerMask = LayerMask.GetMask(layerNames[targetLayer]);
+        }
         mousePosition.y = Camera.current.pixelHeight - mousePosition.y; // Mouse position y is inverted
         RaycastHit hit;
+
         Physics.Raycast(Camera.current.ScreenPointToRay(mousePosition), out hit, Mathf.Infinity, layerMask);
-        
         if (hit.collider)
         {
             return hit.point;
@@ -173,6 +184,7 @@ public class MeshRoadEditor : Editor
     private string[] getLayerNames()
     {
         List<string> layers = new List<string>();
+        layers.Add(TARGET_LAYER_ALL); // Special option to target all layers
         for (int i = 0; i <= MAX_LAYER; i++)
         {
             string layerName = LayerMask.LayerToName(i);
