@@ -162,9 +162,10 @@ public class MeshRoad : MonoBehaviour
         // 8 triangles for each set of 2 cross sections, plus 4 additional for the endpoints
         // Each triangle contains three points
         triangles = new int[((roadLinePoints.Length - 1) * 8 + 4) * 3];
-        
+
         // For each point on the line, generate a rectangle (cross section)
         // perpendicular to the line to the next point.
+        MeshRoadCrossSection prev = null;
         Vector3 direction = new Vector3();
         for (int i = 0; i < roadLinePoints.Length; i++)
         {
@@ -177,13 +178,37 @@ public class MeshRoad : MonoBehaviour
                 direction = b - a;
             }
 
-            MeshRoadCrossSection crossSection = new MeshRoadCrossSection(a, direction, this);
+            MeshRoadCrossSection curr = new MeshRoadCrossSection(a, direction, this);
+
+            // Swap this cross section's sides with previous if that
+            // side is closer to the previous cross section's center
+            if (prev != null)
+            {
+                float currLeftDist = Vector3.Distance(curr.centerLeft, curr.center);
+                float prevLeftDist = Vector3.Distance(curr.centerLeft, prev.center);
+                float currRightDist = Vector3.Distance(curr.centerRight, curr.center);
+                float prevRightDist = Vector3.Distance(curr.centerRight, prev.center);
+                if (prevLeftDist < currLeftDist)
+                {
+                    curr.swapLeftSide(prev);
+                    vertices[i * 4 - 4] = prev.topLeft;
+                    vertices[i * 4 - 2] = prev.bottomLeft;
+                }
+                if (prevRightDist < currRightDist)
+                {
+                    curr.swapRightSide(prev);
+                    vertices[i * 4 - 3] = prev.topRight;
+                    vertices[i * 4 - 1] = prev.bottomRight;
+                }
+            }
 
             // Add vertices to set now
-            vertices[i * 4] = crossSection.topLeft;
-            vertices[i * 4 + 1] = crossSection.topRight;
-            vertices[i * 4 + 2] = crossSection.bottomLeft;
-            vertices[i * 4 + 3] = crossSection.bottomRight;
+            vertices[i * 4] = curr.topLeft;
+            vertices[i * 4 + 1] = curr.topRight;
+            vertices[i * 4 + 2] = curr.bottomLeft;
+            vertices[i * 4 + 3] = curr.bottomRight;
+
+            prev = curr;
         }
 
         triangles = MeshRoadUtil.getStandardMeshTriangles(roadLinePoints.Length);
