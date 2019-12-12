@@ -29,6 +29,16 @@ public class MeshRoadCrossSection
     /// </summary>
     public Vector3 bottomRight { get; private set; }
 
+    /// <summary>
+    /// Top left point on this road's trigger collider.
+    /// </summary>
+    public Vector3 hitboxTopLeft { get; private set; }
+
+    /// <summary>
+    /// Top right point on this road's trigger collider.
+    /// </summary>
+    public Vector3 hitboxTopRight { get; private set; }
+
 
     /// <summary>
     /// Create a new cross section.

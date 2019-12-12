@@ -60,7 +60,7 @@ public class MeshRoad : MonoBehaviour
     /// <summary>
     /// Number of points to average when smoothing road points.
     /// </summary>
-    public int averageWindow = 5;
+    public int averageWindow = 10;
 
 
     // DATA MEMBERS
@@ -152,27 +152,6 @@ public class MeshRoad : MonoBehaviour
     }
 
     /// <summary>
-    /// Create forward-facing triangles from a rectangle and insert them into the list of triangles.
-    /// 
-    /// "Front" side of the rectangle is formed by provided vertices in clockwise order.
-    /// </summary>
-    /// <param name="tOffset">Index at which to insert the first triangle.</param>
-    /// <param name="vertA">Index of top left vertex.</param>
-    /// <param name="vertB">Index of top right vertex.</param>
-    /// <param name="vertC">Index of bottom left vertex.</param>
-    /// <param name="vertD">Index of bottom right vertex.</param>
-    private void pushTriangles(int tOffset, int vertA, int vertB, int vertC, int vertD)
-    {
-        triangles[tOffset] = vertA;
-        triangles[tOffset + 1] = vertB;
-        triangles[tOffset + 2] = vertC;
-
-        triangles[tOffset + 3] = vertC;
-        triangles[tOffset + 4] = vertD;
-        triangles[tOffset + 5] = vertA;
-    }
-
-    /// <summary>
     /// Calculate the road's vertices and form triangles
     /// </summary>
     private void generateShape()
@@ -207,31 +186,7 @@ public class MeshRoad : MonoBehaviour
             vertices[i * 4 + 3] = crossSection.bottomRight;
         }
 
-        // Form appropriate triangles for each cross section
-        for (int i = 0; i < roadLinePoints.Length - 1; i++)
-        {
-            int tOffset = i * 8 * 3;
-            int vOffset = i * 4;
-
-            // Top triangles
-            pushTriangles(tOffset, vOffset, vOffset + 4, vOffset + 5, vOffset + 1);
-
-            // Bottom triangles
-            pushTriangles(tOffset + 6, vOffset + 2, vOffset + 3, vOffset + 7, vOffset + 6);
-
-            // Left triangles
-            pushTriangles(tOffset + 12, vOffset, vOffset + 2, vOffset + 6, vOffset + 4);
-
-            // Right triangles
-            pushTriangles(tOffset + 18, vOffset + 1, vOffset + 5, vOffset + 7, vOffset + 3);
-        }
-
-        // Special case: front triangles on first cross section
-        pushTriangles(triangles.Length - 12, 0, 1, 3, 2);
-
-        // Special case: back triangles on last cross section
-        pushTriangles(triangles.Length - 6, vertices.Length - 4, vertices.Length - 2,
-            vertices.Length - 1, vertices.Length - 3);
+        triangles = MeshRoadUtil.getStandardMeshTriangles(roadLinePoints.Length);
     }
 
     /// <summary>
