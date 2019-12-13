@@ -60,7 +60,7 @@ public class MeshRoad : MonoBehaviour
     /// <summary>
     /// Number of points to average when smoothing road points.
     /// </summary>
-    public int averageWindow = 10;
+    public int averageWindow = 20;
 
 
     // DATA MEMBERS
@@ -162,20 +162,25 @@ public class MeshRoad : MonoBehaviour
         // 8 triangles for each set of 2 cross sections, plus 4 additional for the endpoints
         // Each triangle contains three points
         triangles = new int[((roadLinePoints.Length - 1) * 8 + 4) * 3];
-        
+
         // For each point on the line, generate a rectangle (cross section)
         // perpendicular to the line to the next point.
-        Vector3 direction = new Vector3();
         for (int i = 0; i < roadLinePoints.Length; i++)
         {
             Vector3 a = roadLinePoints[i];
 
-            // Special case - last cross section should use same direction as previous
+            Vector3 fromPrevious = new Vector3();
+            Vector3 toNext = new Vector3();
+
+            if (i > 0)
+            {
+                fromPrevious = roadLinePoints[i] - roadLinePoints[i - 1];
+            }
             if (i < roadLinePoints.Length - 1)
             {
-                Vector3 b = roadLinePoints[i + 1];
-                direction = b - a;
+                toNext = roadLinePoints[i + 1] - roadLinePoints[i];
             }
+            Vector3 direction = ((fromPrevious.normalized + toNext.normalized) / 2).normalized;
 
             MeshRoadCrossSection crossSection = new MeshRoadCrossSection(a, direction, this);
 
