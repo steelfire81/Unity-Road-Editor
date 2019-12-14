@@ -103,4 +103,42 @@ public static class MeshRoadUtil
 
         return triangleSet.getTrianglePoints();
     }
+
+    /// <summary>
+    /// Convert a point in terrain space to world space.
+    /// </summary>
+    /// <param name="terrainPoint"></param>
+    /// <param name="terrain"></param>
+    /// <returns></returns>
+    public static Vector3 terrainPointToWorld(Vector3 terrainPoint, Terrain terrain)
+    {
+        // Terrain X (Width)  = World Z
+        // Terrain Y (Height) = World X
+        // Terrain Z          = World Y
+
+        TerrainData data = terrain.terrainData;
+        Vector3 positionBase = terrain.transform.position;
+        float worldXOffset = (terrainPoint.y / data.heightmapHeight) * data.size.x;
+        float worldYOffset = terrainPoint.z * data.size.y;
+        float worldZOffset = (terrainPoint.x / data.heightmapWidth) * data.size.z;
+        return positionBase + new Vector3(worldXOffset, worldYOffset, worldZOffset);
+    }
+
+    /// <summary>
+    /// Calculate heightmap height for a world y coordinate for a given terrain.
+    /// </summary>
+    /// <param name="worldHeight">A world-space y coordinate.</param>
+    /// <param name="terrain"></param>
+    /// <returns>Heightmap height (between 0 and 1, inclusive).</returns>
+    public static float terrainHeightFromWorld(float worldHeight, Terrain terrain)
+    {
+        float height = (worldHeight - terrain.transform.position.y) / terrain.terrainData.size.y;
+        
+        // Error check
+        if (height < 0 || height > 1)
+        {
+            Debug.LogError("ERROR: Invalid terrain heightmap height " + height);
+        }
+        return Mathf.Clamp(height, 0, 1);
+    }
 }

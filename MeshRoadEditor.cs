@@ -69,10 +69,16 @@ public class MeshRoadEditor : Editor
         // Add features to draw road
         drawingEnabled = EditorGUILayout.Toggle("Enable Drawing", drawingEnabled);
         
-        // Add buttons to generate road
+        // Add button to generate road
         if (GUILayout.Button("Generate Road"))
         {
             road.generate();
+        }
+
+        // Add button to fit associated terrains to this road
+        if (GUILayout.Button("Fit Terrains"))
+        {
+            road.fitTerrains();
         }
 
         // Add button to clear road

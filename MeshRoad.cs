@@ -56,6 +56,12 @@ public class MeshRoad : MonoBehaviour
     /// </summary>
     public float thickness = 0.1f;
 
+    /// <summary>
+    /// All terrain objects that should automatically mold themselves around this road.
+    /// </summary>
+    public Terrain[] shapedTerrains;
+
+
     [Header("Advanced Generation Options")]
     /// <summary>
     /// Number of points to average when smoothing road points.
@@ -216,5 +222,48 @@ public class MeshRoad : MonoBehaviour
         {
             roadLinePoints[i] = transform.InverseTransformPoint(worldPoints[i]);
         }
+    }
+
+    /// <summary>
+    /// Change the shape of affected terrains to fit the bottom of this road.
+    /// </summary>
+    public void fitTerrains()
+    {
+        foreach (Terrain terrain in shapedTerrains)
+        {
+            fitTerrainToRoad(terrain);
+        }
+    }
+
+    /// <summary>
+    /// Change the shape of a terrain to fit the bottom of this road.
+    /// </summary>
+    /// <param name="terrain">Terrain to be shaped.</param>
+    private void fitTerrainToRoad(Terrain terrain)
+    {
+        TerrainData data = terrain.terrainData;
+        int width = data.heightmapWidth;
+        int height = data.heightmapHeight;
+        Debug.Log(width + " / " + height);
+
+        // TODO: Optimize by not grabbing the entire heightmap, just what the road overlaps
+        float[,] heightmap = data.GetHeights(0, 0, width, height);
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Vector3 rayStart = MeshRoadUtil.terrainPointToWorld(new Vector3(x, y, 0), terrain);
+                RaycastHit hit;
+                if (GetComponent<MeshCollider>()
+                    .Raycast(new Ray(rayStart, terrain.transform.up), out hit, data.size.y))
+                {
+                    // Debug.DrawLine(rayStart, hit.point, Color.red, 10, false);
+
+                    // Calculate where to set height
+                    heightmap[x, y] = MeshRoadUtil.terrainHeightFromWorld(hit.point.y, terrain);
+                }
+            }
+        }
+        data.SetHeights(0, 0, heightmap);
     }
 }
