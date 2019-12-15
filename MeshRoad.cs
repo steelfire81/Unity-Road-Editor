@@ -56,6 +56,8 @@ public class MeshRoad : MonoBehaviour
     /// </summary>
     public float thickness = 0.1f;
 
+
+    [Header("Terrain Fitting")]
     /// <summary>
     /// All terrain objects that should automatically mold themselves around this road.
     /// </summary>
@@ -147,14 +149,15 @@ public class MeshRoad : MonoBehaviour
         // Create mesh
         mesh = new Mesh();
         mesh.name = roadName + " Custom Mesh";
-        GetComponent<MeshFilter>().mesh = mesh;
-        GetComponent<MeshCollider>().sharedMesh = mesh;
 
         if (roadLinePoints.Length > 0)
         {
             generateShape();
             generateMesh();
         }
+
+        GetComponent<MeshFilter>().mesh = mesh;
+        GetComponent<MeshCollider>().sharedMesh = mesh;
     }
 
     /// <summary>
@@ -244,7 +247,6 @@ public class MeshRoad : MonoBehaviour
         TerrainData data = terrain.terrainData;
         int width = data.heightmapWidth;
         int height = data.heightmapHeight;
-        Debug.Log(width + " / " + height);
 
         // TODO: Optimize by not grabbing the entire heightmap, just what the road overlaps
         float[,] heightmap = data.GetHeights(0, 0, width, height);
@@ -257,8 +259,6 @@ public class MeshRoad : MonoBehaviour
                 if (GetComponent<MeshCollider>()
                     .Raycast(new Ray(rayStart, terrain.transform.up), out hit, data.size.y))
                 {
-                    // Debug.DrawLine(rayStart, hit.point, Color.red, 10, false);
-
                     // Calculate where to set height
                     heightmap[x, y] = MeshRoadUtil.terrainHeightFromWorld(hit.point.y, terrain);
                 }
