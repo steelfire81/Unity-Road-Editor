@@ -63,6 +63,11 @@ public class MeshRoad : MonoBehaviour
     /// </summary>
     public Terrain[] shapedTerrains;
 
+    /// <summary>
+    /// Maximum distance of neighbor nodes from road to smooth.
+    /// </summary>
+    public int neighborSmoothingRadius = 1;
+
 
     [Header("Advanced Generation Options")]
     /// <summary>
@@ -250,6 +255,7 @@ public class MeshRoad : MonoBehaviour
 
         // TODO: Optimize by not grabbing the entire heightmap, just what the road overlaps
         float[,] heightmap = data.GetHeights(0, 0, width, height);
+        HashSet<Vector2> contactNodes = new HashSet<Vector2>(); // Keep track of nodes under the road
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -259,11 +265,71 @@ public class MeshRoad : MonoBehaviour
                 if (GetComponent<MeshCollider>()
                     .Raycast(new Ray(rayStart, terrain.transform.up), out hit, data.size.y))
                 {
+                    contactNodes.Add(new Vector2(x, y));
+
                     // Calculate where to set height
                     heightmap[x, y] = MeshRoadUtil.terrainHeightFromWorld(hit.point.y, terrain);
                 }
             }
         }
-        data.SetHeights(0, 0, heightmap);
+        data.SetHeights(0, 0, smoothNeighboringTerrain(heightmap, contactNodes, neighborSmoothingRadius));
+    }
+
+    /// <summary>
+    /// Smooth terrain neighboring this road.
+    /// </summary>
+    /// <param name="heightmap">Original terrain heightmap.</param>
+    /// <param name="contactNodes">Set of nodes that make contact </param>
+    /// <param name="smoothingRadius">Maximum distance from road nodes to smooth.</param>
+    /// <returns></returns>
+    private float[,] smoothNeighboringTerrain(float[,] heightmap, HashSet<Vector2> contactNodes, int smoothingRadius)
+    {
+        float[,] updatedHeightmap = heightmap; // Clone?
+        HashSet<Vector2> smoothedNodes = new HashSet<Vector2>(); // Keep track of nodes already smoothed
+
+        int xMax = heightmap.GetUpperBound(0);
+        int yMax = heightmap.GetUpperBound(1);
+
+        // Find nodes in the neighboring radius
+        foreach (Vector2 node in contactNodes)
+        {
+            int startX = (int) node.x;
+            int startY = (int) node.y;
+            for (int x = Mathf.Max(0, startX - smoothingRadius); x <= Mathf.Min(startX + smoothingRadius, xMax); x++)
+            {
+                for (int y = Mathf.Max(0, startY - smoothingRadius); y <= Mathf.Min(startY + smoothingRadius, yMax); y++)
+                {
+                    if (!smoothedNodes.Contains(new Vector2(x, y))
+                        && !contactNodes.Contains(new Vector2(x, y)
+                        ))
+                    {
+                        smoothedNodes.Add(new Vector2(startX, startY));
+                    }
+                }
+            }
+        }
+
+        // Smooth nodes based on neighbors (and original value)
+        foreach (Vector2 node in smoothedNodes)
+        {
+            int startX = (int) node.x;
+            int startY = (int) node.y;
+
+            float total = 0;
+            int numNeighbors = 0;
+
+            for (int x = Mathf.Max(0, startX - smoothingRadius); x <= Mathf.Min(startX + smoothingRadius, xMax); x++)
+            {
+                for (int y = Mathf.Max(0, startY - smoothingRadius); y <= Mathf.Min(startY + smoothingRadius, yMax); y++)
+                {
+                    total += heightmap[x, y];
+                    numNeighbors++;
+                }
+            }
+
+            updatedHeightmap[startX, startY] = total / numNeighbors;
+        }
+
+        return updatedHeightmap;
     }
 }
